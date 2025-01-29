@@ -1,101 +1,120 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect, useRef } from "react";
+
+export default function Meeting() {
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
+  const jitsiContainerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const jitsiApiRef = useRef<any>(null);
+
+  useEffect(() => {
+    const loadJitsiScript = () => {
+      const script = document.createElement("script");
+      script.src =
+        "https://8x8.vc/vpaas-magic-cookie-9ea6a2e7343f4270a46a31f8b731a112/external_api.js";
+      script.async = true;
+      script.onload = initializeJitsi;
+      document.body.appendChild(script);
+    };
+
+    const initializeJitsi = () => {
+      if (!jitsiContainerRef.current) return;
+
+      const options = {
+        roomName: "simple-meeting-room",
+        parentNode: jitsiContainerRef.current,
+        configOverwrite: {
+          startWithAudioMuted: false,
+          startWithVideoMuted: false,
+        },
+        jwt: "eyJraWQiOiJ2cGFhcy1tYWdpYy1jb29raWUtOWVhNmEyZTczNDNmNDI3MGE0NmEzMWY4YjczMWExMTIvYzJkYzgyLVNBTVBMRV9BUFAiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJqaXRzaSIsImlzcyI6ImNoYXQiLCJpYXQiOjE3MzgwMzI2NTIsImV4cCI6MTczODAzOTg1MiwibmJmIjoxNzM4MDMyNjQ3LCJzdWIiOiJ2cGFhcy1tYWdpYy1jb29raWUtOWVhNmEyZTczNDNmNDI3MGE0NmEzMWY4YjczMWExMTIiLCJjb250ZXh0Ijp7ImZlYXR1cmVzIjp7ImxpdmVzdHJlYW1pbmciOnRydWUsIm91dGJvdW5kLWNhbGwiOnRydWUsInNpcC1vdXRib3VuZC1jYWxsIjpmYWxzZSwidHJhbnNjcmlwdGlvbiI6dHJ1ZSwicmVjb3JkaW5nIjp0cnVlfSwidXNlciI6eyJoaWRkZW4tZnJvbS1yZWNvcmRlciI6ZmFsc2UsIm1vZGVyYXRvciI6dHJ1ZSwibmFtZSI6ImhyaW9zbmwiLCJpZCI6Imdvb2dsZS1vYXV0aDJ8MTA5MzUyNTQ4MjI1OTAyNjc5ODU2IiwiYXZhdGFyIjoiIiwiZW1haWwiOiJocmlvc25sQGdtYWlsLmNvbSJ9fSwicm9vbSI6IioifQ.dcpC4DG6jiiTN-Kyd2iZkET6VthMC1V63yAIfnjqqJ1186oOsdLJnOLAoVj_yTdeVqEhErAPNPnnlfRBXj2FpHfBYgYJFdleAurIHzxyEyxbYbIGeJgYWBt-iONu8gsYIRsPhNDZ-jUo9x2VXUZso7q6_uf7cjRf5vbWN7L-_HaHee7YZZ8kikOtFTNpXjafYQIAt5AiWnB0GzCh79NdV5leCU5Nr3yjupZ6_aW3oLZfE8wSKEqCcOoehPEKACphK56w9Fkim6Y_kyBE37Xh52oy8pyTEOQcpbE8J7X9XPoEnkTHHO_vmMmLFqvMlWtlCDQXkFidytCLWEDp0un0JQ",
+        interfaceConfigOverwrite: {
+          FILM_STRIP_MAX_HEIGHT: 0,
+          TILE_VIEW_MAX_COLUMNS: 1,
+        },
+      };
+
+      jitsiApiRef.current = new window.JitsiMeetExternalAPI("8x8.vc", options);
+    };
+
+    if (!window.JitsiMeetExternalAPI) {
+      loadJitsiScript();
+    } else {
+      initializeJitsi();
+    }
+
+    return () => {
+      jitsiApiRef.current?.dispose();
+    };
+  }, []);
+
+  const toggleAudio = () => {
+    jitsiApiRef.current?.executeCommand("toggleAudio");
+    setIsAudioMuted(!isAudioMuted);
+  };
+
+  const toggleVideo = () => {
+    jitsiApiRef.current?.executeCommand("toggleVideo");
+    setIsVideoOff(!isVideoOff);
+  };
+
+  const endCall = () => {
+    jitsiApiRef.current?.executeCommand("hangup");
+    window.location.href = "/";
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-gray-100">
+      {/* Main Content Area */}
+      <div className="container mx-auto p-4">
+        {/* Host Video Area */}
+        <div
+          ref={jitsiContainerRef}
+          className="w-full h-96 bg-gray-200 rounded-lg mb-4"
+        ></div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        {/* Audience Grid */}
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-4 mb-8">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="aspect-video bg-blue-200 rounded-lg p-4 flex items-center justify-center"
+            >
+              <span className="text-gray-600">Participant {i + 1}</span>
+            </div>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Control Buttons */}
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={toggleAudio}
+            className={`px-6 py-3 rounded-full ${
+              isAudioMuted ? "bg-red-500" : "bg-white"
+            } shadow-lg hover:shadow-xl transition`}
+          >
+            {isAudioMuted ? "Unmute" : "Mute"}
+          </button>
+
+          <button
+            onClick={toggleVideo}
+            className={`px-6 py-3 rounded-full ${
+              isVideoOff ? "bg-red-500" : "bg-white"
+            } shadow-lg hover:shadow-xl transition`}
+          >
+            {isVideoOff ? "Start Video" : "Stop Video"}
+          </button>
+
+          <button
+            onClick={endCall}
+            className="px-6 py-3 rounded-full bg-red-600 text-white shadow-lg hover:shadow-xl hover:bg-red-700 transition"
+          >
+            End Call
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
